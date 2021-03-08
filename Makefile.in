@@ -1,0 +1,49 @@
+.POSIX:
+.SUFFIXES:
+.SUFFIXES: .cpp .uto .coverage
+
+CXX        = @CXX@
+CCOV       = gcov
+CFLAGS     = @CFLAGS@
+CFLAGS_COV = @CFLAGS_COV@
+CFLAGS_SAN = @CFLAGS_SAN@
+
+.PHONY: all
+all: angle.coverage equilateraltriangle.coverage fcmp.coverage isoscelestriangle.cpp point.coverage rightangledtriangle.coverage triangle.coverage vector.coverage examples
+
+angle.coverage: fcmp.cpp point.cpp rightangledtriangle.cpp triangle.cpp vector.cpp
+
+equilateraltriangle.coverage: angle.cpp fcmp.cpp rightangledtriangle.cpp triangle.cpp
+
+fcmp.coverage: angle.cpp point.cpp rightangledtriangle.cpp triangle.cpp vector.cpp
+
+isoscelestriangle.coverage: angle.cpp fcmp.cpp rightangledtriangle.cpp triangle.cpp
+
+point.coverage: angle.cpp fcmp.cpp rightangledtriangle.cpp triangle.cpp vector.cpp
+
+rightangledtriangle.coverage: angle.cpp fcmp.cpp point.cpp triangle.cpp vector.cpp
+
+triangle.coverage: angle.cpp fcmp.cpp point.cpp rightangledtriangle.cpp vector.cpp
+
+vector.coverage: angle.cpp fcmp.cpp point.cpp rightangledtriangle.cpp triangle.cpp
+
+examples: examples.cpp angle.cpp equilateraltriangle.cpp fcmp.cpp isoscelestriangle.cpp point.cpp rightangledtriangle.cpp triangle.cpp vector.cpp
+	$(CXX) $(CFLAGS) $(CFLAGS_SAN) $^ -o $@
+
+.cpp.uto:
+	$(CXX) $(CFLAGS) $(CFLAGS_COV) $(CFLAGS_SAN) -DUNITTEST_$$(echo $* | tr '[:lower:]' '[:upper:]') -c $^ -o $@
+
+.uto.coverage:
+	$(CXX) $(CFLAGS) $(CFLAGS_COV) $(CFLAGS_SAN) -DUNITTEST_$$(echo $* | tr '[:lower:]' '[:upper:]') $^ -o $@
+	./$@
+	$(CCOV) $$(basename $< .uto).cpp
+	! grep "#####" $$(basename $< .uto).cpp.gcov
+	rm -f *.gc??
+
+.PHONY: clean
+clean:
+	rm -rf *.uto *.gc?? *.coverage examples
+
+.PHONY: distclean
+distclean: clean
+	rm -f Makefile config.status
